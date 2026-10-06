@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kings Pass Players</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0d1018">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230d1018'/%3E%3Cpath d='M5 11l6 6 5-9 5 9 6-6-2.4 14H7.4z' fill='%23f2b630'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=IBM+Plex+Mono:wght@500;600&family=Karla:wght@400;500;700;800&display=swap">
+<script src="gate.js"></script>
+<style>
+  /* Layout: the box office. Headline numbers, then players per day, then where they come from, then everyone on one sheet. */
+  :root {
+    color-scheme: dark;
+    --bg: #0d1018;
+    --panel: #161a25;
+    --panel-2: #1c2130;
+    --line: #2b3142;
+    --grid: #232838;
+    --ink: #f1ece0;
+    --muted: #a3a9b8;
+    --faint: #6f7686;
+    --gold: #f2b630;
+    --gold-deep: #b9820f;
+    --sk: #bd8a05;          /* Street Kings in charts (checked for colour blindness against the panel) */
+    --ck: #0f9cab;          /* Castaway Kings in charts */
+    --bar: #8b93a8;         /* single-series bars */
+    --good: #7fe0b0;
+    --bad: #ff9b8a;
+    --display: 'Bungee', Impact, 'Arial Black', system-ui, sans-serif;
+    --body: 'Karla', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 var(--body); -webkit-font-smoothing: antialiased; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid #8fb4ff; outline-offset: 2px; }
+  .page { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: calc(env(safe-area-inset-top, 0px) + 20px) calc(env(safe-area-inset-bottom, 0px) + 40px); display: grid; gap: 22px; }
+  header.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+  .mark { display: flex; align-items: center; gap: 10px; font: 400 19px/1 var(--display); text-decoration: none; color: inherit; }
+  .mark svg { width: 28px; height: 22px; fill: var(--gold); }
+  .mark span { font: 600 11px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-left: 4px; }
+  .acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .who { font-size: 13px; color: var(--faint); }
+  .btn { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); font-weight: 700; cursor: pointer; text-decoration: none; }
+  .btn:hover { border-color: #3d4560; }
+  .btn.gold { background: var(--gold); border-color: var(--gold); color: #1a1306; }
+  .btn svg { width: 16px; height: 16px; fill: currentColor; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px; min-width: 0; }
+  .h { margin: 0 0 12px; font: 600 11px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .h small { font: inherit; color: var(--faint); letter-spacing: .08em; text-transform: none; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .kpi { padding: 16px 18px; }
+  .kpi b { display: block; font: 400 clamp(30px, 4vw, 42px)/1 var(--display); font-variant-numeric: tabular-nums; }
+  .kpi span { display: block; margin-top: 8px; font-weight: 700; }
+  .kpi small { display: block; color: var(--faint); font-size: 13px; }
+
+  .chart-wrap { position: relative; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  svg.chart { display: block; width: 100%; height: 220px; overflow: visible; }
+  svg.chart text { fill: var(--faint); font: 500 11px var(--mono); }
+  .tip { position: absolute; pointer-events: none; background: #0b0e15; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 13px; min-width: 150px; box-shadow: 0 10px 30px rgba(0, 0, 0, .4); transform: translate(-50%, calc(-100% - 10px)); white-space: nowrap; z-index: 2; }
+  .tip b { display: block; margin-bottom: 4px; font-family: var(--mono); font-size: 12px; color: var(--muted); font-weight: 600; }
+  .tip div { display: flex; justify-content: space-between; gap: 14px; font-variant-numeric: tabular-nums; }
+  .tip i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; }
+
+  .breaks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .bl { display: grid; gap: 8px; }
+  .bl .r { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; font-size: 14px; }
+  .bl .r span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bl .r em { font-style: normal; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .bl .r .t { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--grid); overflow: hidden; }
+  .bl .r .t i { display: block; height: 100%; border-radius: 0 3px 3px 0; background: var(--bar); }
+  .empty { color: var(--faint); font-size: 14px; }
+
+  .tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+  .tools input[type=search] { flex: 1 1 220px; min-height: 40px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); padding: 8px 16px; min-width: 0; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .seg button { min-height: 36px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); font-weight: 700; font-size: 13px; cursor: pointer; }
+  .seg button[aria-pressed=true] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .tools select { min-height: 36px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel-2); padding: 6px 12px; font-size: 13px; }
+  .table { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 1060px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+  th { font: 600 10px/1.2 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--faint); background: var(--panel-2); position: sticky; top: 0; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-family: var(--mono); color: var(--gold); font-variant-numeric: tabular-nums; }
+  td .sub { display: block; font-size: 12px; color: var(--faint); }
+  td.mail { word-break: break-all; }
+  .g { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .g i { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .pill.on { background: rgba(127, 224, 176, .12); color: var(--good); }
+  .pill.off { background: rgba(255, 155, 138, .12); color: var(--bad); }
+  .pill.yes { background: rgba(242, 182, 48, .14); color: var(--gold); }
+  .pill svg { width: 11px; height: 11px; fill: currentColor; }
+  .mini { min-height: 32px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .mini.danger { color: var(--bad); border-color: rgba(255, 155, 138, .4); }
+  .count { font-size: 13px; color: var(--faint); margin-top: 10px; }
+
+  .gate { max-width: 460px; margin: 8vh auto 0; display: grid; gap: 14px; }
+  .gate h1 { margin: 0; font: 800 26px/1.2 var(--body); }
+  .gate p { margin: 0; color: var(--muted); }
+  .gate code { display: block; padding: 12px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--line); font: 500 13px/1.5 var(--mono); white-space: pre-wrap; word-break: break-all; user-select: all; }
+  .gbox { min-height: 46px; }
+  .kp-google-fallback { min-height: 44px; padding: 10px 20px; border-radius: 999px; border: 1px solid #3a4154; background: #fff; color: #1f1f1f; font: 700 15px var(--body); cursor: pointer; }
+  .spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--gold); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 900px) { .kpis, .breaks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 460px) { .kpis, .breaks { grid-template-columns: minmax(0, 1fr); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } }
+</style>
+</head>
+<body>
+<div class="page" id="app">
+  <div class="gate"><div class="spin" aria-hidden="true"></div></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var P = window.KingsPass, app = document.getElementById('app');
+  var GAMES = [['street-kings', 'Street Kings', 'var(--sk)'], ['castaway-kings', 'Castaway Kings', 'var(--ck)']];
+  var CROWN = '<svg viewBox="0 0 18 14" aria-hidden="true"><path d="M1 3l4 4 4-6 4 6 4-4-1.6 10H2.6z"/></svg>';
+  var DAY = 86400000;
+  var data = null, filter = 'all', sort = 'new', q = '';
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function ago(t) {
+    if (!t) return '';
+    var s = (Date.now() - new Date(t).getTime()) / 1000;
+    if (s < 90) return 'just now'; if (s < 5400) return Math.round(s / 60) + ' min ago';
+    if (s < 129600) return Math.round(s / 3600) + ' h ago'; if (s < 86400 * 45) return Math.round(s / 86400) + ' days ago';
+    return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  function dateOf(t) { return t ? new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }) : ''; }
+  function lastPlayed(p) { var t = 0; for (var k in p.plays) t = Math.max(t, new Date(p.plays[k].last).getTime()); return t; }
+  var AGE = { '13-15': '13 to 15', '16-17': '16 to 17', '18-24': '18 to 24', '25-34': '25 to 34', '35-44': '35 to 44', '45+': '45+' };
+
+  /* ---- getting in ---- */
+  function gate(html) { app.innerHTML = '<div class="gate"><a class="mark" href="./">' + CROWN + 'Kings Pass<span>Players</span></a>' + html + '</div>'; }
+  function signIn(msg) {
+    gate('<h1>Sign in to see your players</h1><p>Only the admin account can open this page.</p><div class="gbox" id="g"></div>' + (msg ? '<p style="color:var(--bad)">' + esc(msg) + '</p>' : ''));
+    P.button(document.getElementById('g'), function (ok, m) { if (ok) load(); else signIn(m); });
+  }
+  function notAdmin(email) {
+    gate('<h1>This account isn’t the admin</h1><p>You’re signed in as <b>' + esc(email) + '</b>. If this is your account, run this line in Supabase (SQL Editor, New query, Run), then refresh this page:</p>' +
+      '<code>insert into public.kings_admins (email) values (\'' + esc(String(email || '').toLowerCase()) + '\');</code>' +
+      '<p><button class="btn" type="button" id="out">Use a different Google account</button></p>');
+    document.getElementById('out').onclick = function () { P.signOut().then(function () { signIn(); }); };
+  }
+
+  function load() {
+    if (!P.session()) { signIn(); return; }
+    P.rpc('kings_me', {}).then(function (me) {
+      if (!me || !me.signed_in) { signIn(); return; }
+      if (!me.admin) { notAdmin(me.email); return; }
+      return P.rpc('kings_admin_list', {}).then(function (d) { data = d; data.email = me.email; render(); });
+    }).catch(function (e) {
+      if (e.code === 'signin' || e.status === 401) { signIn(); return; }
+      if (e.status === 404) { gate('<h1>Not set up yet</h1><p>The Kings Pass database part hasn’t been added in Supabase yet. Run kings-pass.sql in the SQL Editor, then refresh.</p>'); return; }
+      gate('<h1>Couldn’t load</h1><p>' + esc(e.message || 'Check your internet and try again.') + '</p><p><button class="btn" type="button" id="again">Try again</button></p>');
+      document.getElementById('again').onclick = load;
+    });
+  }
+
+  /* ---- the dashboard ---- */
+  function render() {
+    var ps = data.players || [], now = Date.now();
+    var week = ps.filter(function (p) { return now - new Date(p.created_at).getTime() < 7 * DAY; }).length;
+    var active = ps.filter(function (p) { return now - lastPlayed(p) < 7 * DAY; }).length;
+    var upd = ps.filter(function (p) { return p.updates && !p.blocked; }).length;
+    var never = ps.filter(function (p) { return !lastPlayed(p); }).length;
+
+    app.innerHTML =
+      '<header class="top"><a class="mark" href="./">' + CROWN + 'Kings Pass<span>Players</span></a>' +
+      '<div class="acts"><span class="who">' + esc(data.email) + '</span>' +
+      '<button class="btn" type="button" id="refresh"><svg viewBox="0 0 16 16"><path d="M13.6 2.4A7.9 7.9 0 0 0 8 0a8 8 0 1 0 7.7 10h-2.1A6 6 0 1 1 8 2c1.7 0 3.1.7 4.2 1.8L9 7h7V0z"/></svg>Refresh</button>' +
+      '<button class="btn gold" type="button" id="csv"><svg viewBox="0 0 16 16"><path d="M7 0h2v9l3-3 1.4 1.4L8 12.8 2.6 7.4 4 6l3 3zM1 14h14v2H1z"/></svg>Download CSV</button></div></header>' +
+
+      '<section class="kpis" aria-label="Headline numbers">' +
+        kpi(ps.length, 'Passes', 'everyone signed up') +
+        kpi(week, 'New this week', 'signed up in the last 7 days') +
+        kpi(active, 'Played this week', 'opened a game in the last 7 days') +
+        kpi(upd, 'Want updates', 'ticked the email box') +
+      '</section>' +
+
+      '<section class="card"><h2 class="h">Players per day<small>last 30 days · one player counts once a day per game</small></h2>' +
+        '<div class="legend">' + GAMES.map(function (g) { return '<span><i style="background:' + g[2] + '"></i>' + g[1] + '</span>'; }).join('') + '</div>' +
+        '<div class="chart-wrap" id="cw"></div></section>' +
+
+      '<section class="breaks" aria-label="Who they are">' +
+        breakdown('Heard about it from', count(ps, function (p) { return p.heard_from || 'Not given'; })) +
+        breakdown('Age', count(ps, function (p) { return AGE[p.age_range] || 'Not given'; }), ['13 to 15', '16 to 17', '18 to 24', '25 to 34', '35 to 44', '45+']) +
+        breakdown('Plays on', count(ps, function (p) { var d = p.device; for (var k in p.plays) if (p.plays[k].device) d = p.plays[k].device; return d ? d[0].toUpperCase() + d.slice(1) : 'Not known'; })) +
+        breakdown('Town', count(ps.filter(function (p) { return p.town; }), function (p) { return p.town.trim().replace(/\b\w/g, function (c) { return c.toUpperCase(); }); }), null, 6) +
+      '</section>' +
+
+      '<section class="card"><h2 class="h">Everyone with a pass<small>' + never + ' haven’t opened a game yet</small></h2>' +
+        '<div class="tools"><input type="search" id="q" placeholder="Search name, email or town" aria-label="Search players" value="' + esc(q) + '">' +
+        '<div class="seg" role="group" aria-label="Show">' +
+          [['all', 'Everyone'], ['week', 'Played this week'], ['never', 'Not played yet'], ['updates', 'Want updates'], ['blocked', 'Blocked']].map(function (f) {
+            return '<button type="button" data-f="' + f[0] + '" aria-pressed="' + (filter === f[0]) + '">' + f[1] + '</button>'; }).join('') +
+        '</div><select id="sort" aria-label="Sort by"><option value="new">Newest pass first</option><option value="played">Last played first</option><option value="most">Most visits first</option></select></div>' +
+        '<div class="table"><table><thead><tr><th>Pass</th><th>Name</th><th>Email</th><th>Age</th><th>Heard from</th><th>Town</th><th>Emails</th><th>Joined</th>' +
+        GAMES.map(function (g) { return '<th>' + g[1] + '</th>'; }).join('') + '<th></th></tr></thead><tbody id="rows"></tbody></table></div>' +
+        '<p class="count" id="count"></p></section>';
+
+    document.getElementById('sort').value = sort;
+    chart(document.getElementById('cw'), data.days || []);
+    rows();
+    document.getElementById('refresh').onclick = function () { this.disabled = true; load(); };
+    document.getElementById('csv').onclick = csv;
+    document.getElementById('q').oninput = function () { q = this.value; rows(); };
+    document.getElementById('sort').onchange = function () { sort = this.value; rows(); };
+    document.querySelectorAll('.seg button').forEach(function (b) {
+      b.onclick = function () { filter = b.getAttribute('data-f'); document.querySelectorAll('.seg button').forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); rows(); };
+    });
+  }
+  function kpi(n, label, sub) { return '<div class="card kpi"><b>' + n + '</b><span>' + label + '</span><small>' + sub + '</small></div>'; }
+  function count(list, fn) { var m = {}; list.forEach(function (p) { var k = fn(p); m[k] = (m[k] || 0) + 1; }); return m; }
+  function breakdown(title, m, order, max) {
+    var keys = Object.keys(m);
+    if (order) keys.sort(function (a, b) { var ia = order.indexOf(a), ib = order.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
+    else keys.sort(function (a, b) { return m[b] - m[a] || a.localeCompare(b); });
+    if (max) keys = keys.slice(0, max);
+    var top = Math.max.apply(null, keys.map(function (k) { return m[k]; }).concat(1)), total = 0;
+    for (var k in m) total += m[k];
+    return '<div class="card"><h2 class="h">' + esc(title) + '</h2><div class="bl">' +
+      (keys.length ? keys.map(function (k) {
+        return '<div class="r"><span>' + esc(k) + '</span><em>' + m[k] + (total ? ' · ' + Math.round(m[k] / total * 100) + '%' : '') + '</em><div class="t"><i style="width:' + (m[k] / top * 100) + '%"></i></div></div>';
+      }).join('') : '<p class="empty">Nothing yet.</p>') + '</div></div>';
+  }
+
+  // players per day, stacked by game: thin bars, 2px gap between the two parts, rounded top, hover for the numbers
+  function chart(el, days) {
+    var N = 30, today = new Date(); today.setHours(12, 0, 0, 0);
+    var cols = [];
+    for (var i = N - 1; i >= 0; i--) {
+      var d = new Date(today.getTime() - i * DAY), key = d.toISOString().slice(0, 10);
+      var c = { key: key, d: d, v: {} };
+      GAMES.forEach(function (g) { c.v[g[0]] = 0; });
+      cols.push(c);
+    }
+    var byKey = {}; cols.forEach(function (c) { byKey[c.key] = c; });
+    days.forEach(function (r) { var c = byKey[String(r.day).slice(0, 10)]; if (c && c.v[r.game] != null) c.v[r.game] = r.players; });
+    var tot = cols.map(function (c) { return GAMES.reduce(function (s, g) { return s + c.v[g[0]]; }, 0); });
+    var maxV = Math.max.apply(null, tot.concat(1));
+    if (!tot.some(Boolean)) { el.innerHTML = '<p class="empty" style="padding:40px 0;text-align:center">No one has opened a game yet. Players show here, day by day, once they do.</p>'; return; }
+    var step = maxV <= 5 ? 1 : maxV <= 10 ? 2 : maxV <= 25 ? 5 : maxV <= 50 ? 10 : Math.ceil(maxV / 5 / 10) * 10;
+    var top = Math.ceil(maxV / step) * step;
+    var W = Math.max(320, el.clientWidth || 800), H = 220, L = 30, R = 6, T = 10, B = 24;
+    var iw = W - L - R, ih = H - T - B, bw = iw / N, barW = Math.max(3, Math.min(18, bw * 0.62));
+    var y = function (v) { return T + ih - v / top * ih; };
+    var s = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Players per day for the last 30 days, ' + tot[N - 1] + ' today">';
+    for (var t = 0; t <= top; t += step) s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(t) + '" y2="' + y(t) + '" stroke="var(--grid)" stroke-width="1"/><text x="' + (L - 8) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + t + '</text>';
+    cols.forEach(function (c, i) {
+      var x = L + i * bw + (bw - barW) / 2, base = T + ih, parts = GAMES.filter(function (g) { return c.v[g[0]] > 0; });
+      parts.forEach(function (g, j) {
+        var h = c.v[g[0]] / top * ih, gap = j > 0 ? 2 : 0, yy = base - h, hh = h - gap;
+        if (hh > 0) {
+          var last = j === parts.length - 1, r = Math.min(4, barW / 2, hh);
+          s += last ? '<path d="M' + x + ',' + (yy + hh) + 'V' + (yy + r) + 'Q' + x + ',' + yy + ' ' + (x + r) + ',' + yy + 'H' + (x + barW - r) + 'Q' + (x + barW) + ',' + yy + ' ' + (x + barW) + ',' + (yy + r) + 'V' + (yy + hh) + 'Z" fill="' + g[2] + '"/>'
+                    : '<rect x="' + x + '" y="' + yy + '" width="' + barW + '" height="' + hh + '" fill="' + g[2] + '"/>';
+        }
+        base = yy;
+      });
+      if (i % 7 === (N - 1) % 7) s += '<text x="' + (L + i * bw + bw / 2) + '" y="' + (H - 6) + '" text-anchor="middle">' + c.d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + '</text>';
+      s += '<rect class="hit" data-i="' + i + '" x="' + (L + i * bw) + '" y="' + T + '" width="' + bw + '" height="' + ih + '" fill="transparent"/>';
+    });
+    s += '</svg><div class="tip" id="tip" hidden></div>';
+    el.innerHTML = s;
+    var tip = document.getElementById('tip'), svg = el.querySelector('svg');
+    function showTip(e) {
+      var r = e.target.closest && e.target.closest('.hit'); if (!r) { tip.hidden = true; return; }
+      var c = cols[+r.getAttribute('data-i')], box = svg.getBoundingClientRect(), sc = box.width / W;
+      tip.innerHTML = '<b>' + c.d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + '</b>' +
+        GAMES.map(function (g) { return '<div><span><i style="background:' + g[2] + '"></i>' + g[1] + '</span><span>' + c.v[g[0]] + '</span></div>'; }).join('');
+      var cx = (L + (+r.getAttribute('data-i')) * bw + bw / 2) * sc, cy = y(tot[+r.getAttribute('data-i')]) * sc;
+      tip.style.left = Math.max(80, Math.min(box.width - 80, cx)) + 'px'; tip.style.top = Math.max(60, cy) + 'px'; tip.hidden = false;
+    }
+    svg.addEventListener('pointermove', showTip); svg.addEventListener('pointerdown', showTip);
+    svg.addEventListener('pointerleave', function () { tip.hidden = true; });
+  }
+
+  function visible() {
+    var now = Date.now(), qq = q.trim().toLowerCase();
+    var list = (data.players || []).filter(function (p) {
+      if (filter === 'week' && !(now - lastPlayed(p) < 7 * DAY)) return false;
+      if (filter === 'never' && lastPlayed(p)) return false;
+      if (filter === 'updates' && !(p.updates && !p.blocked)) return false;
+      if (filter === 'blocked' && !p.blocked) return false;
+      if (qq && [p.name, p.email, p.town].join(' ').toLowerCase().indexOf(qq) < 0) return false;
+      return true;
+    });
+    var visits = function (p) { var n = 0; for (var k in p.plays) n += p.plays[k].times; return n; };
+    list.sort(sort === 'played' ? function (a, b) { return lastPlayed(b) - lastPlayed(a); }
+      : sort === 'most' ? function (a, b) { return visits(b) - visits(a); }
+      : function (a, b) { return (b.pass_no || 0) - (a.pass_no || 0); });
+    return list;
+  }
+  function rows() {
+    var list = visible(), tb = document.getElementById('rows');
+    tb.innerHTML = list.length ? list.map(function (p) {
+      return '<tr><td class="num">' + String(p.pass_no || 0).padStart(4, '0') + '</td>' +
+        '<td><b>' + esc(p.name) + '</b>' + (p.source ? '<span class="sub">via ' + esc(p.source) + '</span>' : '') + '</td>' +
+        '<td class="mail">' + esc(p.email) + '</td><td>' + esc(AGE[p.age_range] || '') + '</td><td>' + esc(p.heard_from || '') + '</td><td>' + esc(p.town || '') + '</td>' +
+        '<td>' + (p.updates ? '<span class="pill yes">Yes</span>' : '<span class="sub">No</span>') + '</td>' +
+        '<td>' + dateOf(p.created_at) + '</td>' +
+        GAMES.map(function (g) {
+          var x = p.plays && p.plays[g[0]];
+          return '<td>' + (x ? '<span class="g"><i style="background:' + g[2] + '"></i>' + x.times + (x.times === 1 ? ' visit' : ' visits') + '</span><span class="sub">' + ago(x.last) + '</span>' : '<span class="sub">Not yet</span>') + '</td>';
+        }).join('') +
+        '<td>' + (p.email === String(data.email || '').toLowerCase() ? '<span class="sub">You</span>' : p.blocked ? '<span class="pill off">Blocked</span> <button class="mini" type="button" data-b="' + p.id + '" data-v="0">Unblock</button>'
+                            : '<button class="mini danger" type="button" data-b="' + p.id + '" data-v="1">Block</button>') + '</td></tr>';
+    }).join('') : '<tr><td colspan="' + (9 + GAMES.length) + '" class="empty" style="text-align:center;padding:28px">' + ((data.players || []).length ? 'No one matches that.' : 'No passes yet. Share elyneel.github.io/play and they’ll show up here.') + '</td></tr>';
+    document.getElementById('count').textContent = list.length + ' of ' + (data.players || []).length + ' shown';
+    tb.querySelectorAll('button[data-b]').forEach(function (b) {
+      b.onclick = function () {
+        var on = b.getAttribute('data-v') === '1';
+        if (on && b.getAttribute('data-sure') !== '1') { b.setAttribute('data-sure', '1'); b.textContent = 'Tap again to block'; setTimeout(function () { if (b.isConnected) { b.removeAttribute('data-sure'); b.textContent = 'Block'; } }, 4000); return; }
+        b.disabled = true; b.textContent = on ? 'Blocking…' : 'Unblocking…';
+        P.rpc('kings_admin_block', { p_id: b.getAttribute('data-b'), p_blocked: on }).then(function () {
+          (data.players || []).forEach(function (p) { if (p.id === b.getAttribute('data-b')) p.blocked = on; });
+          rows();
+        }).catch(function () { b.disabled = false; b.textContent = 'Didn’t work, try again'; });
+      };
+    });
+  }
+
+  function csv() {
+    var head = ['pass_no', 'name', 'email', 'age_range', 'heard_from', 'town', 'wants_updates', 'joined', 'first_game', 'device', 'source', 'blocked'];
+    GAMES.forEach(function (g) { head.push(g[0] + '_visits', g[0] + '_first_played', g[0] + '_last_played'); });
+    var out = [head];
+    (data.players || []).forEach(function (p) {
+      var r = [p.pass_no, p.name, p.email, p.age_range, p.heard_from, p.town, p.updates ? 'yes' : 'no', p.created_at, p.first_game, p.device, p.source, p.blocked ? 'yes' : 'no'];
+      GAMES.forEach(function (g) { var x = p.plays && p.plays[g[0]]; r.push(x ? x.times : 0, x ? x.first : '', x ? x.last : ''); });
+      out.push(r);
+    });
+    var text = out.map(function (r) { return r.map(function (v) { v = v == null ? '' : String(v); if (/^[=+\-@]/.test(v)) v = "'" + v; return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','); }).join('\r\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + text], { type: 'text/csv' }));
+    a.download = 'kings-pass-players-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+
+  var rt; addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { var cw = document.getElementById('cw'); if (cw && data) chart(cw, data.days || []); }, 200); });
+  load();
+})();
+</script>
+</body>
+</html>
