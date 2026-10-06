@@ -148,12 +148,11 @@
   /* ---- getting in ---- */
   function gate(html) { app.innerHTML = '<div class="gate"><a class="mark" href="./">' + CROWN + 'Kings Pass<span>Players</span></a>' + html + '</div>'; }
   function signIn(msg) {
-    gate('<h1>Sign in to see your players</h1><p>Only the admin account can open this page.</p><div class="gbox" id="g"></div>' + (msg ? '<p style="color:var(--bad)">' + esc(msg) + '</p>' : ''));
+    gate('<h1>Owner sign-in</h1><p>Only the owner’s Google account can open this page.</p><div class="gbox" id="g"></div>' + (msg ? '<p style="color:var(--bad)">' + esc(msg) + '</p>' : ''));
     P.button(document.getElementById('g'), function (ok, m) { if (ok) load(); else signIn(m); });
   }
   function notAdmin(email) {
-    gate('<h1>This account isn’t the admin</h1><p>You’re signed in as <b>' + esc(email) + '</b>. If this is your account, run this line in Supabase (SQL Editor, New query, Run), then refresh this page:</p>' +
-      '<code>insert into public.kings_admins (email) values (\'' + esc(String(email || '').toLowerCase()) + '\');</code>' +
+    gate('<h1>Owner only</h1><p>This page is only for the owner of Kings Pass. Nothing here is shared with any other account.</p>' +
       '<p><button class="btn" type="button" id="out">Use a different Google account</button></p>');
     document.getElementById('out').onclick = function () { P.signOut().then(function () { signIn(); }); };
   }
@@ -166,7 +165,7 @@
       return P.rpc('kings_admin_list', {}).then(function (d) { data = d; data.email = me.email; render(); });
     }).catch(function (e) {
       if (e.code === 'signin' || e.status === 401) { signIn(); return; }
-      if (e.status === 404) { gate('<h1>Not set up yet</h1><p>The Kings Pass database part hasn’t been added in Supabase yet. Run kings-pass.sql in the SQL Editor, then refresh.</p>'); return; }
+      if (e.status === 404) { gate('<h1>Not available right now</h1><p>Try again later.</p>'); return; }
       gate('<h1>Couldn’t load</h1><p>' + esc(e.message || 'Check your internet and try again.') + '</p><p><button class="btn" type="button" id="again">Try again</button></p>');
       document.getElementById('again').onclick = load;
     });
