@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kings Pass</title>
-<meta name="description" content="Get your free pass to play Street Kings and Castaway Kings on your phone or laptop.">
+<meta name="description" content="Get your free pass to play Street Kings, Castaway Kings and Heist Kings on your phone or laptop.">
 <meta name="theme-color" content="#0d1018">
 <meta name="color-scheme" content="dark">
 <meta property="og:title" content="Kings Pass">
-<meta property="og:description" content="One free pass. Every Kings game. Street Kings and Castaway Kings, on your phone or laptop.">
+<meta property="og:description" content="One free pass. Every Kings game. Street Kings, Castaway Kings and Heist Kings, on your phone or laptop.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230d1018'/%3E%3Cpath d='M5 11l6 6 5-9 5 9 6-6-2.4 14H7.4z' fill='%23f2b630'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,6 +33,7 @@
     --sk-bg: #11161a;
     --ck: #ff7a4d;          /* Castaway Kings: sunset coral */
     --ck-sea: #1f6f78;
+    --hk: #7aa2ff;          /* Heist Kings: blue lights */
     --display: 'Bungee', Impact, 'Arial Black', system-ui, sans-serif;
     --body: 'Karla', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
     --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
@@ -84,6 +85,9 @@
   .game.ck { background: linear-gradient(170deg, #173b45 0%, #10262c 60%, #0f1d24 100%); }
   .game.ck h3 { color: #ffe0c8; text-shadow: 0 2px 0 var(--ck); }
   .game.ck::after { content: ""; position: absolute; right: 22px; bottom: -26px; width: 58px; height: 58px; border-radius: 50%; background: radial-gradient(circle at 50% 35%, #ffd28a, var(--ck) 70%); opacity: .6; pointer-events: none; }
+  .game.hk { background: linear-gradient(165deg, #1a2342 0%, #10162b 55%, #0b1020 100%); }
+  .game.hk h3 { color: #eef2ff; text-shadow: 0 2px 0 #3d5fd1; }
+  .game.hk::after { content: ""; position: absolute; right: -36px; top: 22px; width: 150px; height: 20px; background: repeating-linear-gradient(-45deg, #ffd42a 0 14px, #1a1400 14px 28px); transform: rotate(18deg); opacity: .45; pointer-events: none; }
   .game.pick { outline: 2px solid var(--gold); outline-offset: 2px; }
 
   /* the desk: where you get your pass */
@@ -142,6 +146,7 @@
   .plays .btn { width: 100%; }
   .plays .btn.sk { background: var(--sk); box-shadow: 0 5px 0 #a8850a; }
   .plays .btn.ck { background: var(--ck); box-shadow: 0 5px 0 #c24d27; }
+  .plays .btn.hk { background: var(--hk); box-shadow: 0 5px 0 #3d5fd1; color: #0b1020; }
   .pass-links { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
   .confirm { display: grid; gap: 10px; padding: 14px; border-radius: 12px; border: 1px solid rgba(255, 155, 138, .4); background: rgba(255, 155, 138, .06); }
   .confirm .row-c { flex-wrap: wrap; }
@@ -194,6 +199,11 @@
           <h3>Castaway Kings</h3>
           <p>Wash up on a tropical island. Farm, build, mine and survive the nights until your boat is ready to sail. Your mates can join your island.</p>
           <span class="meta">Survival · phone or laptop</span>
+        </article>
+        <article class="game hk" data-game="heist-kings">
+          <h3>Heist Kings</h3>
+          <p>Rob a footballer’s mansion with your mates. One of you is secretly the snitch. Carry the heavy stuff together, then vote at the van who gets left behind.</p>
+          <span class="meta">Party heist · 3 to 6 mates · phone or laptop</span>
         </article>
       </section>
     </div>
@@ -322,7 +332,7 @@
       '<div class="plays">' +
         (back ? '<a class="btn" href="' + esc(back) + '">Back to ' + esc(backGame ? GAMES[backGame].name : 'the game') + '</a>' : '') +
         order.filter(function (k) { return k !== backGame; }).map(function (k) {
-          return '<a class="btn ' + (k === 'street-kings' ? 'sk' : 'ck') + '" href="' + GAMES[k].url + '">Play ' + esc(GAMES[k].name) + '</a>';
+          return '<a class="btn ' + ({ 'street-kings': 'sk', 'castaway-kings': 'ck', 'heist-kings': 'hk' }[k] || 'ck') + '" href="' + GAMES[k].url + '">Play ' + esc(GAMES[k].name) + '</a>';
         }).join('') +
       '</div>' +
       '<p class="note">Tip: on your phone, open a game and use “Add to Home Screen” so it’s one tap next time.</p>' +

@@ -6,7 +6,7 @@
    Pages use it:   window.KingsPass (sign in button, session, calls to the database)
 
    The sign-in is the same one Street Kings already uses (Supabase + Google), kept in the same place on this
-   website, so signing in once covers the sign-up page, Street Kings and Castaway Kings.
+   website, so signing in once covers the sign-up page and every game.
    Only switched on for the real website: local files, the copy inside Claude and test pages are left alone. */
 (function () {
   'use strict';
@@ -20,7 +20,8 @@
   var HOME = 'https://elyneel.github.io/play/';
   var GAMES = {
     'street-kings': { name: 'Street Kings', url: 'https://elyneel.github.io/street-kings/' },
-    'castaway-kings': { name: 'Castaway Kings', url: 'https://elyneel.github.io/castaway-kings/' }
+    'castaway-kings': { name: 'Castaway Kings', url: 'https://elyneel.github.io/castaway-kings/' },
+    'heist-kings': { name: 'Heist Kings', url: 'https://elyneel.github.io/heist-kings/' }
   };
   var LIVE = location.hostname === 'elyneel.github.io';
 
